@@ -14,13 +14,12 @@ import {
     useColorMode,
     Text,
 } from '@chakra-ui/react';
-import { isWalletInfoCurrentlyInjected, isWalletInfoRemote, WalletInfo } from '@tonconnect/sdk';
+import { WalletInfo, WalletInfoRemote } from '@tonconnect/sdk';
 import st from './Modal.module.css';
 import { useEffect, useState } from 'react';
 // eslint-disable-next-line import/no-unresolved
 import { connector } from '../../api/connector/connector';
 import { ModalQRCode } from '../modalQRCode/ModalQRCode';
-import { createPortal } from 'react-dom';
 export function ModalConnect({
     isOpen,
     onClose,
@@ -31,20 +30,18 @@ export function ModalConnect({
     onOpen: () => void;
 }) {
     const [wallets, setWallets] = useState<WalletInfo[] | null>(null);
-    const [isQRCode, setQRCode] = useState(false);
-    const close = () => setQRCode(false);
-    const open = () => setQRCode(true);
+    const [choisyWallet, setChoisyWallet] = useState<WalletInfoRemote | null>(null);
+    const closeQRCode = () => setChoisyWallet(null);
 
     const { colorMode } = useColorMode();
     const onWalletClick = (wallet: WalletInfo) => {
-        if (isWalletInfoRemote(wallet)) {
-            // QR code
-            open();
-        }
-        if (isWalletInfoCurrentlyInjected(wallet)) {
-            return connector.connect({ jsBridgeKey: wallet.jsBridgeKey });
-        }
-        window.open(wallet.aboutUrl, '_blank');
+        // if (isWalletInfoRemote(wallet)) {
+        return setChoisyWallet(wallet as WalletInfoRemote);
+        // }
+        // if (isWalletInfoCurrentlyInjected(wallet)) {
+        //     return connector.connect({ jsBridgeKey: wallet.jsBridgeKey });
+        // }
+        // window.open(wallet.aboutUrl, '_blank');
     };
 
     useEffect(() => {
@@ -63,11 +60,10 @@ export function ModalConnect({
                     <ModalCloseButton />
                     <ModalBody>
                         <List className={st.list} display={'grid'}>
-                            {wallets?.map((wal) => {
-                                console.log([...wal.platforms]);
+                            {wallets?.map((wal, ind) => {
                                 return (
                                     <ListItem
-                                        key={wal.name + wal.aboutUrl}
+                                        key={ind}
                                         className={st.item}
                                         padding={'5px'}
                                         backgroundColor={colorMode === 'light' ? 'rgb(226, 239, 245)' : '#4d5564'}
@@ -100,7 +96,7 @@ export function ModalConnect({
                                             {[
                                                 ...wal.platforms.map((el, ind, arr) => {
                                                     return (
-                                                        <span>
+                                                        <span key={ind}>
                                                             {el}
                                                             {ind === arr.length - 1 ? '' : ', '}
                                                         </span>
@@ -108,8 +104,6 @@ export function ModalConnect({
                                                 }),
                                             ]}
                                         </Text>
-
-                                        <ModalQRCode isOpen={isQRCode} onClose={close} wallet={wal} />
                                     </ListItem>
                                 );
                             })}
@@ -118,7 +112,7 @@ export function ModalConnect({
                     <ModalFooter />
                 </ModalContent>
             </Modal>
-            {/* <ModalQRCode isOpen={isQRCode} onClose={close} /> */}
+            <ModalQRCode isOpen={!!choisyWallet} onClose={closeQRCode} wallet={choisyWallet} />
         </>
     );
 }
