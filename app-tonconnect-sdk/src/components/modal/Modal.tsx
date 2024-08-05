@@ -13,13 +13,17 @@ import {
     Box,
     useColorMode,
     Text,
+    Spinner,
 } from '@chakra-ui/react';
-import { WalletInfo, WalletInfoRemote } from '@tonconnect/sdk';
+import { isWalletInfoCurrentlyInjected, isWalletInfoRemote, WalletInfo, WalletInfoRemote } from '@tonconnect/sdk';
 import st from './Modal.module.css';
 import { useEffect, useState } from 'react';
 // eslint-disable-next-line import/no-unresolved
 import { connector } from '../../api/connector/connector';
+// eslint-disable-next-line import/no-unresolved
 import { ModalQRCode } from '../modalQRCode/ModalQRCode';
+// eslint-disable-next-line import/no-unresolved
+import { useTonConnectonRestored } from '../../hooks/useTonConnectionRestored';
 export function ModalConnect({
     isOpen,
     onClose,
@@ -32,27 +36,30 @@ export function ModalConnect({
     const [wallets, setWallets] = useState<WalletInfo[] | null>(null);
     const [choisyWallet, setChoisyWallet] = useState<WalletInfoRemote | null>(null);
     const closeQRCode = () => setChoisyWallet(null);
+    const isRestored = useTonConnectonRestored();
 
     const { colorMode } = useColorMode();
     const onWalletClick = (wallet: WalletInfo) => {
-        // if (isWalletInfoRemote(wallet)) {
-        return setChoisyWallet(wallet as WalletInfoRemote);
-        // }
-        // if (isWalletInfoCurrentlyInjected(wallet)) {
-        //     return connector.connect({ jsBridgeKey: wallet.jsBridgeKey });
-        // }
-        // window.open(wallet.aboutUrl, '_blank');
+        if (isWalletInfoCurrentlyInjected(wallet)) {
+            console.log('currently');
+            return connector.connect({ jsBridgeKey: wallet.jsBridgeKey });
+        }
+        if (isWalletInfoRemote(wallet)) {
+            console.log('remote', wallet);
+            return setChoisyWallet(wallet as WalletInfoRemote);
+        }
+        window.open(wallet.aboutUrl, '_blank');
     };
 
     useEffect(() => {
-        connector.getWallets().then((wallet) => {
-            if (wallet.length) setWallets(wallet);
-        });
+        connector.getWallets().then(setWallets);
     }, []);
 
     return (
         <>
-            <Button onClick={onOpen}>Connect wallet</Button>
+            <Button borderRadius={'50px'} onClick={onOpen}>
+                {isRestored ? 'Connect wallet' : <Spinner />}
+            </Button>
             <Modal isCentered isOpen={isOpen} onClose={onClose}>
                 <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px) hue-rotate(90deg)" />
                 <ModalContent>
