@@ -9,7 +9,9 @@ import { connector } from '../../api/connector/connector';
 import { ModalConnect } from '../modal/Modal';
 // eslint-disable-next-line import/no-unresolved
 import { useToggle } from '../../hooks/useToggle';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useGetWallets } from '../../hooks/useGetWallets';
+import { isWalletInfoCurrentlyEmbedded } from '@tonconnect/sdk';
 // eslint-disable-next-line import/no-unresolved
 
 export function Header() {
@@ -18,6 +20,14 @@ export function Header() {
     const { isOpen, close, open } = useToggle(false);
     const [isCopy, setCopy] = useState(false);
     useEffect(() => setCopy(false), []);
+    const wallets = useGetWallets();
+    const embedded = useMemo(() => wallets && wallets.find(isWalletInfoCurrentlyEmbedded), [wallets]);
+    const onClickOpen = () => {
+        if (embedded) {
+            connector.connect({ jsBridgeKey: embedded.jsBridgeKey });
+        }
+        open();
+    };
     return (
         <header className={st.head}>
             <LinkIcon position={'relative'} width={'30px'} height={'30px'} color="yellow.200"></LinkIcon>
@@ -26,7 +36,7 @@ export function Header() {
                     {colorMode === 'dark' ? <SunIcon color={'yellow.200'} /> : <MoonIcon color={'gray.600'} />}
                 </Button>
                 {!wallet ? (
-                    <ModalConnect isOpen={isOpen} onClose={close} onOpen={open} />
+                    <ModalConnect isOpen={isOpen} onClose={close} onOpen={onClickOpen} />
                 ) : (
                     <Menu isLazy>
                         <MenuButton

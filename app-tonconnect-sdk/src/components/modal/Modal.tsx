@@ -17,13 +17,14 @@ import {
 } from '@chakra-ui/react';
 import { isWalletInfoCurrentlyInjected, isWalletInfoRemote, WalletInfo, WalletInfoRemote } from '@tonconnect/sdk';
 import st from './Modal.module.css';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 // eslint-disable-next-line import/no-unresolved
 import { connector } from '../../api/connector/connector';
 // eslint-disable-next-line import/no-unresolved
 import { ModalQRCode } from '../modalQRCode/ModalQRCode';
 // eslint-disable-next-line import/no-unresolved
 import { useTonConnectonRestored } from '../../hooks/useTonConnectionRestored';
+import { useGetWallets } from '../../hooks/useGetWallets';
 export function ModalConnect({
     isOpen,
     onClose,
@@ -33,7 +34,7 @@ export function ModalConnect({
     onClose: () => void;
     onOpen: () => void;
 }) {
-    const [wallets, setWallets] = useState<WalletInfo[] | null>(null);
+    const wallets = useGetWallets();
     const [choisyWallet, setChoisyWallet] = useState<WalletInfoRemote | null>(null);
     const closeQRCode = () => setChoisyWallet(null);
     const isRestored = useTonConnectonRestored();
@@ -41,19 +42,13 @@ export function ModalConnect({
     const { colorMode } = useColorMode();
     const onWalletClick = (wallet: WalletInfo) => {
         if (isWalletInfoCurrentlyInjected(wallet)) {
-            console.log('currently');
             return connector.connect({ jsBridgeKey: wallet.jsBridgeKey });
         }
         if (isWalletInfoRemote(wallet)) {
-            console.log('remote', wallet);
             return setChoisyWallet(wallet as WalletInfoRemote);
         }
         window.open(wallet.aboutUrl, '_blank');
     };
-
-    useEffect(() => {
-        connector.getWallets().then(setWallets);
-    }, []);
 
     return (
         <>
